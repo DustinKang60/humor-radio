@@ -5,7 +5,7 @@ function formatDate(iso) {
   ).padStart(2, '0')}`
 }
 
-export default function EpisodeList({ episodes, currentId, onSelect }) {
+export default function EpisodeList({ episodes, currentId, onSelect, showChannel }) {
   if (episodes.length === 0) {
     return <p className="empty">에피소드가 없습니다.</p>
   }
@@ -18,10 +18,15 @@ export default function EpisodeList({ episodes, currentId, onSelect }) {
           className={ep.id === currentId ? 'episode active' : 'episode'}
           onClick={() => onSelect(ep)}
         >
-          <img src={ep.thumbnail} alt="" loading="lazy" />
+          <img src={ep.thumbnail} alt="" loading="lazy" className="episode-thumb" />
           <div className="episode-meta">
             <div className="episode-title">{ep.title}</div>
-            <div className="episode-date">{formatDate(ep.publishedAt)}</div>
+            <div className="episode-sub">
+              {showChannel && (
+                <span className="episode-channel">{ep.channelTitle}</span>
+              )}
+              <span className="episode-date">{formatDate(ep.publishedAt)}</span>
+            </div>
           </div>
         </li>
       ))}

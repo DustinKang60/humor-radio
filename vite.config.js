@@ -16,9 +16,9 @@ export default defineConfig({
         'icons/apple-touch-icon.png',
       ],
       manifest: {
-        name: '유머 라디오 - 하이파이브',
-        short_name: '유머라디오',
-        description: '라디오 하이파이브 채널을 팟캐스트처럼 듣는 앱',
+        name: '유튜브 라디오',
+        short_name: '유튜브라디오',
+        description: '좋아하는 유튜브 채널을 팟캐스트처럼 듣는 앱',
         theme_color: '#ff5a36',
         background_color: '#111111',
         display: 'standalone',

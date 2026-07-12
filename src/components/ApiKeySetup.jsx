@@ -12,9 +12,14 @@ export default function ApiKeySetup({ onSave }) {
 
   return (
     <div className="setup">
-      <h1>유머 라디오</h1>
+      <img
+        src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+        alt=""
+        className="setup-logo"
+      />
+      <h1>유튜브 라디오</h1>
       <p>
-        라디오 하이파이브 채널의 최신 영상을 팟캐스트처럼 듣기 위해
+        좋아하는 유튜브 채널의 최신 영상을 팟캐스트처럼 듣기 위해
         유튜브 Data API 키가 필요해요.
       </p>
       <ol className="setup-steps">
@@ -43,6 +48,7 @@ export default function ApiKeySetup({ onSave }) {
         />
         <button type="submit">저장하고 시작하기</button>
       </form>
+      <p className="setup-brand">작은앱공방</p>
     </div>
   )
 }
