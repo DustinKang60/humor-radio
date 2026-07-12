@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ChannelTabs from './components/ChannelTabs'
 import EpisodeList from './components/EpisodeList'
-import Player from './components/Player'
 import Settings from './components/Settings'
 import { DEFAULT_CHANNELS, fetchEpisodesPage } from './api/youtube'
 
@@ -28,7 +27,6 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
-  const [current, setCurrent] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(() => !localStorage.getItem(API_KEY_STORAGE))
   const [activeChannelId, setActiveChannelId] = useState(null)
 
@@ -115,7 +113,6 @@ export default function App() {
     setEpisodes([])
     setPageTokens({})
     setHasMore(false)
-    setCurrent(null)
   }
 
   function addChannel(channel) {
@@ -126,13 +123,6 @@ export default function App() {
 
   function removeChannel(id) {
     setChannels((prev) => prev.filter((c) => c.id !== id))
-  }
-
-  function playByOffset(offset) {
-    if (!current) return
-    const idx = visibleEpisodes.findIndex((e) => e.id === current.id)
-    const next = visibleEpisodes[idx + offset]
-    if (next) setCurrent(next)
   }
 
   return (
@@ -175,8 +165,6 @@ export default function App() {
           <>
             <EpisodeList
               episodes={visibleEpisodes}
-              currentId={current?.id}
-              onSelect={setCurrent}
               showChannel={channels.length > 1 && activeChannelId === null}
             />
             {hasMore && (
@@ -196,15 +184,6 @@ export default function App() {
           </div>
         )}
       </main>
-
-      {current && (
-        <Player
-          episode={current}
-          onEnded={() => playByOffset(1)}
-          onNext={() => playByOffset(1)}
-          onPrev={() => playByOffset(-1)}
-        />
-      )}
 
       {settingsOpen && (
         <Settings

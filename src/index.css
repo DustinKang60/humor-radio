@@ -260,7 +260,7 @@ button {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 100px;
+  padding-bottom: 24px;
 }
 
 .episode-list {
@@ -272,23 +272,19 @@ button {
   gap: 4px;
 }
 
-.episode {
+.episode a {
   display: flex;
   gap: 12px;
   align-items: center;
   padding: 8px;
   border-radius: var(--radius-md);
-  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
   transition: background 0.15s ease;
 }
 
-.episode:hover {
+.episode a:hover {
   background: var(--surface);
-}
-
-.episode.active {
-  background: var(--surface-2);
-  box-shadow: inset 3px 0 0 0 var(--accent-2);
 }
 
 .episode-thumb {
@@ -359,109 +355,6 @@ button {
   opacity: 0.6;
 }
 
-/* Player */
-
-.player {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 640px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-}
-
-.player-art {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--surface-2);
-}
-
-.player-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.player-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.player-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 6px;
-}
-
-.player-error {
-  font-size: 11px;
-  color: #ff9db2;
-  margin-bottom: 4px;
-}
-
-.player-progress {
-  height: 4px;
-  background: var(--surface-2);
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-.player-progress-fill {
-  height: 100%;
-  background: var(--accent-grad);
-  border-radius: 2px;
-}
-
-.player-time {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--muted-2);
-  margin-top: 5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.player-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.player-controls button {
-  background: transparent;
-  color: var(--muted);
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.player-controls button:nth-child(2) {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--accent-grad);
-  color: white;
-  font-size: 17px;
-  box-shadow: 0 4px 14px rgba(255, 45, 98, 0.35);
-}
-
 /* Settings: API key onboarding */
 
 .settings-hint {
@@ -483,8 +376,7 @@ button {
   color: var(--accent-1);
 }
 
-.channel-add-form input,
-.player-progress {
+.channel-add-form input {
   font: inherit;
 }
 
