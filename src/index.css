@@ -97,6 +97,64 @@ button {
   cursor: pointer;
 }
 
+.channel-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  top: 71px;
+  background: rgba(13, 13, 16, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9;
+  border-bottom: 1px solid var(--border);
+}
+
+.channel-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.channel-tab {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+  max-width: 200px;
+}
+
+.channel-tab span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-tab img {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.channel-tab:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.channel-tab.active {
+  background: var(--accent-grad);
+  color: white;
+}
+
 .icon-button {
   width: 38px;
   height: 38px;

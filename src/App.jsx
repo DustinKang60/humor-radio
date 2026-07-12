@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import ChannelTabs from './components/ChannelTabs'
 import EpisodeList from './components/EpisodeList'
 import Player from './components/Player'
 import Settings from './components/Settings'
@@ -29,6 +30,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [current, setCurrent] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(() => !localStorage.getItem(API_KEY_STORAGE))
+  const [activeChannelId, setActiveChannelId] = useState(null)
 
   const load = useCallback(async () => {
     if (!apiKey || channels.length === 0) {
@@ -89,7 +91,18 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(CHANNELS_STORAGE, JSON.stringify(channels))
-  }, [channels])
+    if (activeChannelId && !channels.some((c) => c.id === activeChannelId)) {
+      setActiveChannelId(null)
+    }
+  }, [channels, activeChannelId])
+
+  const visibleEpisodes = useMemo(
+    () =>
+      activeChannelId
+        ? episodes.filter((e) => e.channelId === activeChannelId)
+        : episodes,
+    [episodes, activeChannelId],
+  )
 
   function handleSaveKey(key) {
     localStorage.setItem(API_KEY_STORAGE, key)
@@ -117,8 +130,8 @@ export default function App() {
 
   function playByOffset(offset) {
     if (!current) return
-    const idx = episodes.findIndex((e) => e.id === current.id)
-    const next = episodes[idx + offset]
+    const idx = visibleEpisodes.findIndex((e) => e.id === current.id)
+    const next = visibleEpisodes[idx + offset]
     if (next) setCurrent(next)
   }
 
@@ -147,16 +160,24 @@ export default function App() {
         </div>
       </header>
 
+      {apiKey && (
+        <ChannelTabs
+          channels={channels}
+          activeId={activeChannelId}
+          onSelect={setActiveChannelId}
+        />
+      )}
+
       {error && <p className="error">{error}</p>}
 
       <main className="app-main">
         {apiKey ? (
           <>
             <EpisodeList
-              episodes={episodes}
+              episodes={visibleEpisodes}
               currentId={current?.id}
               onSelect={setCurrent}
-              showChannel={channels.length > 1}
+              showChannel={channels.length > 1 && activeChannelId === null}
             />
             {hasMore && (
               <button
