@@ -37,8 +37,11 @@ function resolveAudioUrl(videoId) {
       'yt-dlp',
       ['-f', 'bestaudio', '-g', '--no-update', videoId],
       { timeout: 20000 },
-      (err, stdout) => {
-        if (err) return reject(err)
+      (err, stdout, stderr) => {
+        if (err) {
+          err.stderr = stderr
+          return reject(err)
+        }
         const url = stdout.trim().split('\n')[0]
         if (!url) return reject(new Error('empty url from yt-dlp'))
         resolve(url)
@@ -46,6 +49,16 @@ function resolveAudioUrl(videoId) {
     )
   })
 }
+
+// Temporary diagnostic endpoint: shows raw yt-dlp stderr for a video id.
+app.get('/debug/:id', async (req, res) => {
+  try {
+    const url = await resolveAudioUrl(req.params.id)
+    res.json({ ok: true, url })
+  } catch (err) {
+    res.json({ ok: false, message: err.message, stderr: err.stderr })
+  }
+})
 
 function expiryFromUrl(url) {
   try {
