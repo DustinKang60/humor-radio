@@ -280,6 +280,27 @@ button {
   color: var(--muted-2);
 }
 
+.load-more {
+  display: block;
+  margin: 8px auto 0;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.load-more:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.load-more:disabled {
+  opacity: 0.6;
+}
+
 /* Player */
 
 .player {

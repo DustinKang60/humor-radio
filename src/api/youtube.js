@@ -65,18 +65,21 @@ export async function resolveChannel(apiKey, input) {
   }
 }
 
-async function fetchChannelEpisodes(apiKey, channel) {
-  const uploadsPlaylistId = 'UU' + channel.id.slice(2)
-  const data = await getJson(
-    apiUrl('playlistItems', {
-      part: 'snippet,contentDetails',
-      playlistId: uploadsPlaylistId,
-      maxResults: '15',
-      key: apiKey,
-    }),
-  )
+const PAGE_SIZE = 15
 
-  return (data.items || []).map((item) => ({
+async function fetchChannelPage(apiKey, channel, pageToken) {
+  const uploadsPlaylistId = 'UU' + channel.id.slice(2)
+  const params = {
+    part: 'snippet,contentDetails',
+    playlistId: uploadsPlaylistId,
+    maxResults: String(PAGE_SIZE),
+    key: apiKey,
+  }
+  if (pageToken) params.pageToken = pageToken
+
+  const data = await getJson(apiUrl('playlistItems', params))
+
+  const episodes = (data.items || []).map((item) => ({
     id: item.contentDetails.videoId,
     title: item.snippet.title,
     description: item.snippet.description,
@@ -87,23 +90,49 @@ async function fetchChannelEpisodes(apiKey, channel) {
     channelId: channel.id,
     channelTitle: channel.title,
   }))
+
+  return { episodes, nextPageToken: data.nextPageToken || null }
 }
 
-export async function fetchLatestEpisodes(apiKey, channels) {
+// A channel is still fetchable if we've never fetched it (no key in
+// pageTokens yet) or its last fetch returned a non-null next token.
+function isFetchable(channel, pageTokens) {
+  return pageTokens[channel.id] !== undefined
+    ? pageTokens[channel.id] !== null
+    : true
+}
+
+export async function fetchEpisodesPage(apiKey, channels, pageTokens = {}) {
+  const targets = channels.filter((c) => isFetchable(c, pageTokens))
+
   const results = await Promise.allSettled(
-    channels.map((channel) => fetchChannelEpisodes(apiKey, channel)),
+    targets.map((channel) =>
+      fetchChannelPage(apiKey, channel, pageTokens[channel.id] || undefined),
+    ),
   )
 
-  const episodes = results
-    .filter((r) => r.status === 'fulfilled')
-    .flatMap((r) => r.value)
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+  const nextPageTokens = { ...pageTokens }
+  const episodes = []
+  let anyOk = false
+
+  results.forEach((r, i) => {
+    const channel = targets[i]
+    if (r.status === 'fulfilled') {
+      anyOk = true
+      episodes.push(...r.value.episodes)
+      nextPageTokens[channel.id] = r.value.nextPageToken
+    }
+  })
+
+  episodes.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
 
   const failed = results.filter((r) => r.status === 'rejected')
   const error =
-    failed.length > 0 && episodes.length === 0
+    failed.length > 0 && !anyOk
       ? failed[0].reason?.message || '에피소드를 불러오지 못했습니다.'
       : null
 
-  return { episodes, error }
+  const hasMore = channels.some((c) => isFetchable(c, nextPageTokens))
+
+  return { episodes, nextPageTokens, hasMore, error }
 }

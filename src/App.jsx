@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import EpisodeList from './components/EpisodeList'
 import Player from './components/Player'
 import Settings from './components/Settings'
-import { DEFAULT_CHANNELS, fetchLatestEpisodes } from './api/youtube'
+import { DEFAULT_CHANNELS, fetchEpisodesPage } from './api/youtube'
 
 const API_KEY_STORAGE = 'humor-radio-api-key'
 const CHANNELS_STORAGE = 'humor-radio-channels'
@@ -22,7 +22,10 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE))
   const [channels, setChannels] = useState(loadChannels)
   const [episodes, setEpisodes] = useState([])
+  const [pageTokens, setPageTokens] = useState({})
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
   const [current, setCurrent] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(() => !localStorage.getItem(API_KEY_STORAGE))
@@ -30,13 +33,21 @@ export default function App() {
   const load = useCallback(async () => {
     if (!apiKey || channels.length === 0) {
       setEpisodes([])
+      setPageTokens({})
+      setHasMore(false)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      const { episodes, error } = await fetchLatestEpisodes(apiKey, channels)
+      const { episodes, nextPageTokens, hasMore, error } = await fetchEpisodesPage(
+        apiKey,
+        channels,
+        {},
+      )
       setEpisodes(episodes)
+      setPageTokens(nextPageTokens)
+      setHasMore(hasMore)
       if (error) setError(error)
     } catch (err) {
       setError(err.message)
@@ -44,6 +55,33 @@ export default function App() {
       setLoading(false)
     }
   }, [apiKey, channels])
+
+  async function loadMore() {
+    if (!apiKey || loadingMore || !hasMore) return
+    setLoadingMore(true)
+    setError(null)
+    try {
+      const {
+        episodes: more,
+        nextPageTokens,
+        hasMore: nextHasMore,
+        error,
+      } = await fetchEpisodesPage(apiKey, channels, pageTokens)
+      setEpisodes((prev) => {
+        const seen = new Set(prev.map((e) => e.id))
+        const merged = [...prev, ...more.filter((e) => !seen.has(e.id))]
+        merged.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+        return merged
+      })
+      setPageTokens(nextPageTokens)
+      setHasMore(nextHasMore)
+      if (error) setError(error)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => {
     load()
@@ -62,6 +100,8 @@ export default function App() {
     localStorage.removeItem(API_KEY_STORAGE)
     setApiKey(null)
     setEpisodes([])
+    setPageTokens({})
+    setHasMore(false)
     setCurrent(null)
   }
 
@@ -111,12 +151,23 @@ export default function App() {
 
       <main className="app-main">
         {apiKey ? (
-          <EpisodeList
-            episodes={episodes}
-            currentId={current?.id}
-            onSelect={setCurrent}
-            showChannel={channels.length > 1}
-          />
+          <>
+            <EpisodeList
+              episodes={episodes}
+              currentId={current?.id}
+              onSelect={setCurrent}
+              showChannel={channels.length > 1}
+            />
+            {hasMore && (
+              <button
+                className="load-more"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? '불러오는 중...' : '더 보기'}
+              </button>
+            )}
+          </>
         ) : (
           <div className="key-prompt">
             <p>유튜브 API 키를 설정에서 입력하면 최신 영상을 불러올 수 있어요.</p>
