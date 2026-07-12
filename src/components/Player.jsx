@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useYoutubeApi } from '../hooks/useYoutubeApi'
+import { AUDIO_PROXY_URL } from '../config'
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return '0:00'
@@ -9,59 +9,87 @@ function formatTime(seconds) {
 }
 
 export default function Player({ episode, onEnded, onNext, onPrev }) {
-  const YT = useYoutubeApi()
-  const containerRef = useRef(null)
-  const playerRef = useRef(null)
+  const audioRef = useRef(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState({ current: 0, duration: 0 })
+  const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
-    if (!YT || !episode) return
+    const audio = audioRef.current
+    if (!audio || !episode) return
+    setLoadError(null)
+    audio.src = `${AUDIO_PROXY_URL}/audio/${episode.id}`
+    audio.play().catch(() => {})
+  }, [episode?.id])
 
-    if (!playerRef.current) {
-      playerRef.current = new YT.Player(containerRef.current, {
-        height: '100%',
-        width: '100%',
-        videoId: episode.id,
-        playerVars: { autoplay: 1, playsinline: 1 },
-        events: {
-          onReady: (e) => e.target.playVideo(),
-          onStateChange: (e) => {
-            setIsPlaying(e.data === YT.PlayerState.PLAYING)
-            if (e.data === YT.PlayerState.ENDED) onEnded?.()
-          },
-        },
-      })
-    } else {
-      playerRef.current.loadVideoById(episode.id)
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const onPlay = () => setIsPlaying(true)
+    const onPause = () => setIsPlaying(false)
+    const onTimeUpdate = () =>
+      setProgress({ current: audio.currentTime, duration: audio.duration || 0 })
+    const onEndedEvt = () => onEnded?.()
+    const onError = () => setLoadError('오디오를 불러오지 못했어요.')
+
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('pause', onPause)
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onTimeUpdate)
+    audio.addEventListener('ended', onEndedEvt)
+    audio.addEventListener('error', onError)
+    return () => {
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onTimeUpdate)
+      audio.removeEventListener('ended', onEndedEvt)
+      audio.removeEventListener('error', onError)
     }
-  }, [YT, episode?.id])
+  }, [onEnded])
+
+  // Media Session: lock-screen / notification controls, and what lets
+  // playback survive switching to another app in the background.
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !episode) return
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: episode.title,
+      artist: episode.channelTitle || '유튜브 라디오',
+      artwork: episode.thumbnail
+        ? [{ src: episode.thumbnail, sizes: '320x180', type: 'image/jpeg' }]
+        : [],
+    })
+    navigator.mediaSession.setActionHandler('play', () => audioRef.current?.play())
+    navigator.mediaSession.setActionHandler('pause', () => audioRef.current?.pause())
+    navigator.mediaSession.setActionHandler('previoustrack', () => onPrev?.())
+    navigator.mediaSession.setActionHandler('nexttrack', () => onNext?.())
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (audioRef.current && details.seekTime != null) {
+        audioRef.current.currentTime = details.seekTime
+      }
+    })
+  }, [episode, onPrev, onNext])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const p = playerRef.current
-      if (p && typeof p.getCurrentTime === 'function') {
-        setProgress({
-          current: p.getCurrentTime() || 0,
-          duration: p.getDuration() || 0,
-        })
-      }
-    }, 500)
-    return () => clearInterval(interval)
-  }, [])
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
+    }
+  }, [isPlaying])
 
   function togglePlay() {
-    const p = playerRef.current
-    if (!p) return
-    isPlaying ? p.pauseVideo() : p.playVideo()
+    const audio = audioRef.current
+    if (!audio) return
+    if (isPlaying) audio.pause()
+    else audio.play().catch(() => {})
   }
 
   function seek(e) {
-    const p = playerRef.current
-    if (!p || !progress.duration) return
+    const audio = audioRef.current
+    if (!audio || !progress.duration) return
     const rect = e.currentTarget.getBoundingClientRect()
     const ratio = (e.clientX - rect.left) / rect.width
-    p.seekTo(progress.duration * ratio, true)
+    audio.currentTime = progress.duration * ratio
   }
 
   if (!episode) return null
@@ -72,9 +100,13 @@ export default function Player({ episode, onEnded, onNext, onPrev }) {
 
   return (
     <div className="player">
-      <div className="player-video" ref={containerRef} />
+      <audio ref={audioRef} preload="metadata" />
+      <div className="player-art">
+        {episode.thumbnail && <img src={episode.thumbnail} alt="" />}
+      </div>
       <div className="player-info">
         <div className="player-title">{episode.title}</div>
+        {loadError && <div className="player-error">{loadError}</div>}
         <div className="player-progress" onClick={seek}>
           <div className="player-progress-fill" style={{ width: `${pct}%` }} />
         </div>
@@ -82,17 +114,17 @@ export default function Player({ episode, onEnded, onNext, onPrev }) {
           <span>{formatTime(progress.current)}</span>
           <span>{formatTime(progress.duration)}</span>
         </div>
-        <div className="player-controls">
-          <button onClick={onPrev} aria-label="이전 화">
-            ⏮
-          </button>
-          <button onClick={togglePlay} aria-label={isPlaying ? '일시정지' : '재생'}>
-            {isPlaying ? '⏸' : '▶'}
-          </button>
-          <button onClick={onNext} aria-label="다음 화">
-            ⏭
-          </button>
-        </div>
+      </div>
+      <div className="player-controls">
+        <button onClick={onPrev} aria-label="이전 화">
+          ⏮
+        </button>
+        <button onClick={togglePlay} aria-label={isPlaying ? '일시정지' : '재생'}>
+          {isPlaying ? '⏸' : '▶'}
+        </button>
+        <button onClick={onNext} aria-label="다음 화">
+          ⏭
+        </button>
       </div>
     </div>
   )

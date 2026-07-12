@@ -260,7 +260,7 @@ button {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: calc(45vh + 130px);
+  padding-bottom: 100px;
 }
 
 .episode-list {
@@ -373,29 +373,44 @@ button {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: var(--shadow);
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
 }
 
-.player-video {
+.player-art {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+
+.player-art img {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 45vh;
-  background: black;
+  height: 100%;
+  object-fit: cover;
 }
 
 .player-info {
-  padding: 12px 18px 18px;
+  flex: 1;
   min-width: 0;
 }
 
 .player-title {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.player-error {
+  font-size: 11px;
+  color: #ff9db2;
+  margin-bottom: 4px;
 }
 
 .player-progress {
@@ -416,39 +431,35 @@ button {
   justify-content: space-between;
   font-size: 11px;
   color: var(--muted-2);
-  margin-top: 6px;
+  margin-top: 5px;
   font-variant-numeric: tabular-nums;
 }
 
 .player-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 22px;
-  margin-top: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .player-controls button {
   background: transparent;
-  color: var(--text);
+  color: var(--muted);
   padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
 }
 
 .player-controls button:nth-child(2) {
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--accent-grad);
-  font-size: 20px;
+  color: white;
+  font-size: 17px;
   box-shadow: 0 4px 14px rgba(255, 45, 98, 0.35);
-}
-
-.player-controls button:not(:nth-child(2)) {
-  font-size: 18px;
-  color: var(--muted);
 }
 
 /* Settings: API key onboarding */
