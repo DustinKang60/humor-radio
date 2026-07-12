@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import ApiKeySetup from './components/ApiKeySetup'
 import EpisodeList from './components/EpisodeList'
 import Player from './components/Player'
 import Settings from './components/Settings'
@@ -26,7 +25,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [current, setCurrent] = useState(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(() => !localStorage.getItem(API_KEY_STORAGE))
 
   const load = useCallback(async () => {
     if (!apiKey || channels.length === 0) {
@@ -83,10 +82,6 @@ export default function App() {
     if (next) setCurrent(next)
   }
 
-  if (!apiKey) {
-    return <ApiKeySetup onSave={handleSaveKey} />
-  }
-
   return (
     <div className="app">
       <header className="app-header">
@@ -115,12 +110,19 @@ export default function App() {
       {error && <p className="error">{error}</p>}
 
       <main className="app-main">
-        <EpisodeList
-          episodes={episodes}
-          currentId={current?.id}
-          onSelect={setCurrent}
-          showChannel={channels.length > 1}
-        />
+        {apiKey ? (
+          <EpisodeList
+            episodes={episodes}
+            currentId={current?.id}
+            onSelect={setCurrent}
+            showChannel={channels.length > 1}
+          />
+        ) : (
+          <div className="key-prompt">
+            <p>유튜브 API 키를 설정에서 입력하면 최신 영상을 불러올 수 있어요.</p>
+            <button onClick={() => setSettingsOpen(true)}>설정 열기</button>
+          </div>
+        )}
       </main>
 
       {current && (
@@ -138,6 +140,7 @@ export default function App() {
           channels={channels}
           onAddChannel={addChannel}
           onRemoveChannel={removeChannel}
+          onSaveKey={handleSaveKey}
           onResetKey={handleResetKey}
           onClose={() => setSettingsOpen(false)}
         />
