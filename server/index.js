@@ -35,7 +35,15 @@ function resolveAudioUrl(videoId) {
   return new Promise((resolve, reject) => {
     execFile(
       'yt-dlp',
-      ['-f', 'bestaudio', '-g', '--no-update', videoId],
+      [
+        '-f',
+        'bestaudio',
+        '-g',
+        '--no-update',
+        '--extractor-args',
+        'youtube:player_client=android_vr',
+        videoId,
+      ],
       { timeout: 20000 },
       (err, stdout, stderr) => {
         if (err) {
