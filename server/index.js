@@ -1,10 +1,17 @@
 import express from 'express'
 import cors from 'cors'
 import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
 
 const app = express()
 const PORT = process.env.PORT || 8787
 const ALLOWED_ORIGIN = 'https://dustinkang60.github.io'
+
+// YouTube blocks datacenter IPs with a bot check. Passing cookies from a
+// logged-in (throwaway) account lets yt-dlp authenticate past it. The
+// cookie file is provided out-of-band (Render Secret File), never in git.
+const COOKIE_FILE = process.env.YT_COOKIES_FILE || '/etc/secrets/cookies.txt'
+const hasCookies = existsSync(COOKIE_FILE)
 
 // videoId -> { url, expiresAt }
 const urlCache = new Map()
@@ -28,33 +35,24 @@ app.get('/', (req, res) => {
 })
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true })
+  res.json({ ok: true, cookies: hasCookies, cookieFile: COOKIE_FILE })
 })
 
 function resolveAudioUrl(videoId) {
   return new Promise((resolve, reject) => {
-    execFile(
-      'yt-dlp',
-      [
-        '-f',
-        'bestaudio',
-        '-g',
-        '--no-update',
-        '--extractor-args',
-        'youtube:player_client=android_vr',
-        videoId,
-      ],
-      { timeout: 20000 },
-      (err, stdout, stderr) => {
-        if (err) {
-          err.stderr = stderr
-          return reject(err)
-        }
-        const url = stdout.trim().split('\n')[0]
-        if (!url) return reject(new Error('empty url from yt-dlp'))
-        resolve(url)
-      },
-    )
+    const args = ['-f', 'bestaudio', '-g', '--no-update']
+    if (hasCookies) args.push('--cookies', COOKIE_FILE)
+    args.push(videoId)
+
+    execFile('yt-dlp', args, { timeout: 20000 }, (err, stdout, stderr) => {
+      if (err) {
+        err.stderr = stderr
+        return reject(err)
+      }
+      const url = stdout.trim().split('\n')[0]
+      if (!url) return reject(new Error('empty url from yt-dlp'))
+      resolve(url)
+    })
   })
 }
 
@@ -135,4 +133,9 @@ app.get('/audio/:id', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`audio proxy listening on :${PORT}`)
+  console.log(
+    hasCookies
+      ? `cookies loaded from ${COOKIE_FILE}`
+      : `no cookie file at ${COOKIE_FILE} (YouTube bot check may block requests)`,
+  )
 })
