@@ -80,7 +80,7 @@ button:disabled {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 140px;
+  padding-bottom: calc(45vh + 130px);
 }
 
 .error {
@@ -156,22 +156,18 @@ button:disabled {
   background: var(--surface);
   border-top: 1px solid #2a2a2a;
   display: flex;
-  gap: 12px;
-  padding: 10px 16px;
-  align-items: center;
+  flex-direction: column;
 }
 
 .player-video {
-  width: 100px;
-  height: 60px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 45vh;
   background: black;
 }
 
 .player-info {
-  flex: 1;
+  padding: 10px 16px 14px;
   min-width: 0;
 }
 
